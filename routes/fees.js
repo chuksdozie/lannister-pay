@@ -13,7 +13,7 @@ router.get("/", getFeesCache, async function (req, res, next) {
     return;
   } catch (error) {
     console.error(error);
-    res.send({ error: error.message });
+    res.status(error.status).json({ error: error.message });
     next(error);
   }
 });
@@ -27,7 +27,7 @@ router.post("/", async function (req, res, next) {
     return;
   } catch (error) {
     console.error(error);
-    res.send({ error: error.message });
+    res.status(error.status).json({ error: error.message });
     next(error);
   }
 });

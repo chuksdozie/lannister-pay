@@ -2,7 +2,7 @@ const client = require("../redis/redis");
 var { APIError } = require("../config/error");
 const httpStatus = require("http-status");
 
-// cache middleware
+// cache middleware for get fees route
 const getFeesCache = async (req, res, next) => {
   try {
     let data = await client.get("fees");
@@ -18,6 +18,8 @@ const getFeesCache = async (req, res, next) => {
     next();
   }
 };
+
+// middleware for the post transaction route
 
 module.exports = {
   getFeesCache,

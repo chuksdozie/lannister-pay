@@ -4,6 +4,9 @@ var createError = require("http-errors");
 var { APIError } = require("../config/error");
 const httpStatus = require("http-status");
 
+/*************************************
+ * initial fee configuration function
+ *************************************/
 const feesSetup = async (x) => {
   try {
     const payload = await feesSetupPayload(x);
@@ -23,23 +26,18 @@ const feesSetup = async (x) => {
         errors: "Wrong payload has been detected",
       });
     }
+
     var value = payload.FeeConfigurationSpec;
     value = value.split("\n");
 
     // create an empty object
     let data = {};
-
     for (let i = 0; i < value.length; i++) {
       data = { ...data, [i + 1]: value[i] };
     }
 
     const newData = JSON.stringify(data);
-
     client.set("fees", newData);
-
-    // const myst = await client.get("fees");
-    // const getData = JSON.parse(myst);
-
     return data;
   } catch (error) {
     throw new APIError({
@@ -50,7 +48,9 @@ const feesSetup = async (x) => {
   }
 };
 
-// get all available fee configurations
+/*************************************
+ * get all available fee configurations
+ *************************************/
 const fees = async () => {
   try {
     const payload = await client.get("fees");
@@ -62,6 +62,7 @@ const fees = async () => {
         errors: "No Fee configuration found",
       });
     }
+
     const data = JSON.parse(payload);
     return data;
   } catch (error) {
