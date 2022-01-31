@@ -1,18 +1,16 @@
 var express = require("express");
 var router = express.Router();
-
 const { feesSetup, fees } = require("../controllers/Fees");
 const { getFeesCache } = require("../middlewares/FeesMiddleware");
 
 /* GET fees. */
 router.get("/", getFeesCache, async function (req, res, next) {
   try {
-    console.log("from request");
+    // console.log("from request");
     const data = await fees();
     res.status(200).json({ data });
     return;
   } catch (error) {
-    console.error(error);
     res.status(error.status).json({ error: error.message });
     next(error);
   }
@@ -26,7 +24,6 @@ router.post("/", async function (req, res, next) {
     res.status(201).json({ status: "ok" });
     return;
   } catch (error) {
-    console.error(error);
     res.status(error.status).json({ error: error.message });
     next(error);
   }

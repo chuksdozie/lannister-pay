@@ -10,7 +10,7 @@ const httpStatus = require("http-status");
 const feesSetup = async (x) => {
   try {
     const payload = await feesSetupPayload(x);
-    console.log(12, payload);
+    // ensuring payload exists
     if (!payload) {
       throw new APIError({
         status: httpStatus.BAD_REQUEST,
@@ -18,7 +18,7 @@ const feesSetup = async (x) => {
         errors: "No payload has been detected",
       });
     }
-
+    // ensuring payload is valid
     if (!payload.FeeConfigurationSpec) {
       throw new APIError({
         status: httpStatus.BAD_REQUEST,
@@ -35,7 +35,6 @@ const feesSetup = async (x) => {
     for (let i = 0; i < value.length; i++) {
       data = { ...data, [i + 1]: value[i] };
     }
-
     const newData = JSON.stringify(data);
     client.set("fees", newData);
     return data;
@@ -48,13 +47,13 @@ const feesSetup = async (x) => {
   }
 };
 
-/*************************************
+/****************************************
  * get all available fee configurations
- *************************************/
+ ****************************************/
 const fees = async () => {
   try {
     const payload = await client.get("fees");
-
+    // ensuring payload exists
     if (!payload) {
       throw new APIError({
         status: httpStatus.NOT_FOUND,
@@ -62,7 +61,6 @@ const fees = async () => {
         errors: "No Fee configuration found",
       });
     }
-
     const data = JSON.parse(payload);
     return data;
   } catch (error) {

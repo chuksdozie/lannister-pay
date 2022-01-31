@@ -1,16 +1,15 @@
 const { transactionsPayload } = require("../payloads");
 var client = require("../redis/redis");
-var createError = require("http-errors");
 var { APIError } = require("../config/error");
 const httpStatus = require("http-status");
 
 /**********************************************************
  *  fee configuration function and transaction application
- *********************************************************/
+ **********************************************************/
 const feesComputation = async (x) => {
   try {
     const payload = await transactionsPayload(x);
-    console.log(12, payload);
+    // ensure payload exists
     if (!payload) {
       throw new APIError({
         status: httpStatus.BAD_REQUEST,
@@ -19,10 +18,14 @@ const feesComputation = async (x) => {
       });
     }
 
+    // ensure critical payload info exists
     if (
       !payload.ID ||
       !payload.Amount ||
       !payload.Currency ||
+      !payload.Customer ||
+      !payload.Customer.ID ||
+      !payload.Customer.EmailAddress ||
       !payload.PaymentEntity.ID ||
       !payload.PaymentEntity.Number ||
       !payload.PaymentEntity.Type
@@ -43,10 +46,12 @@ const feesComputation = async (x) => {
       });
     }
 
-    let feeId = payload.ID;
+    //initializing critical info from payload
+    let transactionId = payload.ID;
     let feeCurrency = payload.Currency;
     let feeLocale;
     let feeEntity = payload.PaymentEntity.Type;
+    let bearsFee = payload.Customer.BearsFee;
     let entityProperty = {
       ID: payload.PaymentEntity.ID,
       Issuer: payload.PaymentEntity.Issuer,
@@ -57,51 +62,28 @@ const feesComputation = async (x) => {
     let feeType;
     let feeValue;
 
+    // set the FEE LOCALE
     if (payload.CurrencyCountry !== payload.PaymentEntity.Country) {
       feeLocale = "INTL";
     } else {
       feeLocale = "LOCL";
     }
 
-    // console.log(
-    //   `${feeCurrency} ${feeLocale} ${feeEntity}(${entityProperty.Brand})`
-    // );
-    // console.log(
-    //   `${feeCurrency} ${feeLocale} ${feeEntity}(${entityProperty.Issuer})`
-    // );
-    // console.log(
-    //   `${feeCurrency} ${feeLocale} ${feeEntity}(${entityProperty.Number})`
-    // );
+    // setting up the sructure
     const byBrand = `${feeEntity}(${entityProperty.Brand})`;
     const byIssuer = `${feeEntity}(${entityProperty.Issuer})`;
     const byNumber = `${feeEntity}(${entityProperty.Number})`;
     const byID = `${feeEntity}(${entityProperty.ID})`;
 
+    // getting the FEE CONFIGURATION
     let compatible = false;
-    // let numOfStars = 0;
-
     let test = JSON.parse(await client.get("fees"));
-    console.log(111, test);
-    // let test = {
-    //   data: {
-    //     1: "LNPY1221 NGN * *(*) : APPLY PERC 1.4",
-    //     2: "LNPY1222 NGN INTL CREDIT-CARD(VISA) : APPLY PERC 5.0",
-    //     3: "LNPY1223 NGN LOCL CREDIT-CARD(*) : APPLY FLAT_PERC 50:1.4",
-    //     4: "LNPY1224 NGN * BANK-ACCOUNT(*) : APPLY FLAT 100",
-    //     5: "LNPY1225 NGN * USSD(MTN) : APPLY PERC 0.55",
-    //   },
-    // };
     let possible = [];
+
+    // extracting possible FEE CONFIGURATION for the transaction
     for (const key in test) {
       let numOfStars = 0;
-      //   console.log(test.data[key]);
       const compare = test[key].split(" ");
-      //   console.log(feeCurrency, 1, compare[1]);
-      //   console.log(feeLocale, 2, compare[2]);
-      //   console.log(byBrand, 3, compare[3]);
-      //   console.log(byIssuer, 3, compare[3]);
-      //   console.log(byID, 3, compare[3]);
-      //   console.log(byNumber, 3, compare[3]);
       if (
         feeCurrency === compare[1] &&
         feeLocale === compare[2] &&
@@ -111,7 +93,6 @@ const feesComputation = async (x) => {
           byID === compare[3])
       ) {
         compatible = true;
-        console.log(`this is fully compatible with ${test[key]}`);
         possible.push(test[key], numOfStars);
       } else if (
         (compare[1] !== "*" && feeCurrency !== compare[1]) ||
@@ -124,8 +105,6 @@ const feesComputation = async (x) => {
           compare[3] !== `*(*)`)
       ) {
         compatible = false;
-        console.log(feeCurrency !== compare[1] || compare[1] !== "*");
-        console.log(`this is not compatible with ${test[key]}`);
       } else {
         if (
           compare[3].substring(compare[3].length - 2, compare[3].length - 1) ===
@@ -142,20 +121,11 @@ const feesComputation = async (x) => {
         if (compare[1] === `*`) {
           numOfStars++;
         }
-
-        console.log(`COMPATIBLE with ${test[key]} with ${numOfStars} stars`);
         possible.push(test[key], numOfStars);
       }
-      console.log(possible);
-
-      //   const ha = "jesus";
-      //   console.log(ha.substring(0, 1));
-
-      //   //   console.log(test.data[key].substring(9, 20));
-      //   const forCompare = test.data[key].split(" ");
-      //   console.log(forCompare);
     }
 
+    // check if any AVAILABLE FEE CONFIGURATION
     if (!possible[0]) {
       throw new APIError({
         status: httpStatus.BAD_REQUEST,
@@ -164,24 +134,19 @@ const feesComputation = async (x) => {
       });
     }
 
+    // EXTRACTING THE FEE CONFIGURATION
+    // WITH THE LOWEST NUMBER OF STARS
     let stars = [];
     for (let i = 1; i < possible.length; i = i + 2) {
       stars.push(possible[i]);
     }
-    console.log(stars);
     let lowestStar = Math.min(...stars);
-    console.log(324, lowestStar);
     let selectedStar = possible.indexOf(lowestStar);
     let selectedFC = possible[selectedStar - 1];
-
-    console.log("this is most appropraite", selectedFC);
-    console.log(selectedFC.split(" "));
-    console.log(selectedFC.split(" ")[6]);
-    console.log(selectedFC.split(" ")[7]);
     feeType = selectedFC.split(" ")[6];
     feeValue = selectedFC.split(" ")[7];
-    console.log(typeof parseInt(feeValue));
 
+    // DETECTING THE FEE TYPE TO APPLY
     if (feeType === "FLAT") {
       feeValue = parseFloat(feeValue).toFixed(2);
     } else if (feeType === "FLAT_PERC") {
@@ -196,9 +161,16 @@ const feesComputation = async (x) => {
       ).toFixed(2);
       feeValue = parseFloat(feeValue);
     }
-    console.log(feeValue, "is the charge");
-    let chargeAmount = parseFloat(payload.Amount) + parseFloat(feeValue);
 
+    // CALC THE CHARGE AMOUNT
+    let chargeAmount;
+    if (bearsFee) {
+      chargeAmount = parseFloat(payload.Amount) + parseFloat(feeValue);
+    } else {
+      chargeAmount = parseFloat(payload.Amount);
+    }
+
+    // THE RESPONSE STRUCTURE
     const data = {
       AppliedFeeID: selectedFC.split(" ")[0],
       AppliedFeeValue: feeValue,
@@ -206,12 +178,9 @@ const feesComputation = async (x) => {
       SettlementAmount: chargeAmount - feeValue,
     };
 
-    console.log(data);
+    // SENDING RESPONSE TO REDIS CACHE
     const newData = JSON.stringify(data);
-    client.set(JSON.stringify(payload.ID), newData);
-
-    // let min = Math.min(possible);
-    // console.log(min);
+    client.set(JSON.stringify(transactionId), newData);
 
     return data;
   } catch (error) {
