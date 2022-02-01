@@ -36,7 +36,7 @@ const feesSetup = async (x) => {
       data = { ...data, [i + 1]: value[i] };
     }
     const newData = JSON.stringify(data);
-    client.set("fees", newData);
+    client.setEx("fees", 500, newData);
     return data;
   } catch (error) {
     throw new APIError({

@@ -180,7 +180,7 @@ const feesComputation = async (x) => {
 
     // SENDING RESPONSE TO REDIS CACHE
     const newData = JSON.stringify(data);
-    client.set(JSON.stringify(transactionId), newData);
+    client.setEx(JSON.stringify(transactionId), 500, newData);
 
     return data;
   } catch (error) {
