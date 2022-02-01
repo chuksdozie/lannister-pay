@@ -1,7 +1,7 @@
 var redis = require("redis");
 
 // redis setup
-const REDIS_PORT = process.env.REDIS_URL || "6379";
+const REDIS_PORT = process.env.REDIS_PORT || "6379";
 const client = redis.createClient(REDIS_PORT);
 
 (async () => {
