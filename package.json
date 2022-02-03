@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "start": "node ./bin/www",
-    "start:dev": "nodemon node ./bin/www"
+    "start:dev": "nodemon node ./bin/www",
+    "test": "jest --testTimeout=20000 --forceExit"
   },
   "dependencies": {
     "cookie-parser": "~1.4.4",
@@ -16,5 +17,15 @@
     "jade": "~1.11.0",
     "morgan": "~1.9.1",
     "redis": "^4.0.2"
+  },
+  "devDependencies": {
+    "jest": "^27.4.7",
+    "supertest": "^6.2.2"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
+    ]
   }
 }
