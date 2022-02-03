@@ -4,10 +4,10 @@ var redis = require("redis");
 const REDIS_PORT = process.env.REDIS_PORT || "6379";
 
 // deployed
-// const client = redis.createClient({ url: process.env.REDIS_URL });
+const client = redis.createClient({ url: process.env.REDIS_URL });
 
 // local
-const client = redis.createClient(REDIS_PORT);
+// const client = redis.createClient(REDIS_PORT);
 
 (async () => {
   await client.connect();
