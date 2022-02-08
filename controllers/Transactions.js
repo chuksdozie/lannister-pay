@@ -6,9 +6,9 @@ const httpStatus = require("http-status");
 /**********************************************************
  *  fee configuration function and transaction application
  **********************************************************/
-const feesComputation = async (x) => {
+const feesComputation = async (transactionPayload) => {
   try {
-    const payload = await transactionsPayload(x);
+    const payload = await transactionsPayload(transactionPayload);
     // ensure payload exists
     if (!payload) {
       throw new APIError({
@@ -78,7 +78,7 @@ const feesComputation = async (x) => {
     // getting the FEE CONFIGURATION
     let compatible = false;
     let test = JSON.parse(await client.get("fees"));
-    let possible = [];
+    let possibleFeeConfig = [];
 
     // extracting possible FEE CONFIGURATION for the transaction
     for (const key in test) {
@@ -93,7 +93,7 @@ const feesComputation = async (x) => {
           byID === compare[3])
       ) {
         compatible = true;
-        possible.push(test[key], numOfStars);
+        possibleFeeConfig.push(test[key], numOfStars);
       } else if (
         (compare[1] !== "*" && feeCurrency !== compare[1]) ||
         (feeLocale !== compare[2] && compare[2] !== "*") ||
@@ -121,12 +121,12 @@ const feesComputation = async (x) => {
         if (compare[1] === `*`) {
           numOfStars++;
         }
-        possible.push(test[key], numOfStars);
+        possibleFeeConfig.push(test[key], numOfStars);
       }
     }
 
     // check if any AVAILABLE FEE CONFIGURATION
-    if (!possible[0]) {
+    if (!possibleFeeConfig[0]) {
       throw new APIError({
         status: httpStatus.BAD_REQUEST,
         message: `No Fee configuration for ${payload.Currency} transactions`,
@@ -137,12 +137,12 @@ const feesComputation = async (x) => {
     // EXTRACTING THE FEE CONFIGURATION
     // WITH THE LOWEST NUMBER OF STARS
     let stars = [];
-    for (let i = 1; i < possible.length; i = i + 2) {
-      stars.push(possible[i]);
+    for (let i = 1; i < possibleFeeConfig.length; i = i + 2) {
+      stars.push(possibleFeeConfig[i]);
     }
     let lowestStar = Math.min(...stars);
-    let selectedStar = possible.indexOf(lowestStar);
-    let selectedFC = possible[selectedStar - 1];
+    let selectedStar = possibleFeeConfig.indexOf(lowestStar);
+    let selectedFC = possibleFeeConfig[selectedStar - 1];
     feeType = selectedFC.split(" ")[6];
     feeValue = selectedFC.split(" ")[7];
 

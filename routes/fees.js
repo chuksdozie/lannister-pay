@@ -19,8 +19,8 @@ router.get("/", getFeesCache, async function (req, res, next) {
 /* CREATE Fees Setup */
 router.post("/", async function (req, res, next) {
   try {
-    const x = req.body;
-    const data = await feesSetup(x);
+    const feeConfig = req.body;
+    const data = await feesSetup(feeConfig);
     res.status(201).json({ status: "ok" });
     return;
   } catch (error) {

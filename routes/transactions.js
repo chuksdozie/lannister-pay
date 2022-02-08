@@ -11,8 +11,8 @@ var { transactionCache } = require("../middlewares/FeesMiddleware");
 /* Fee Computation endpoint */
 router.post("/", transactionCache, async function (req, res, next) {
   try {
-    const x = req.body;
-    const data = await feesComputation(x);
+    const transactionPayload = req.body;
+    const data = await feesComputation(transactionPayload);
     res.status(200).json({ status: data });
     return;
   } catch (error) {
